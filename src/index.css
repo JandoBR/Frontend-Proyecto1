@@ -1,0 +1,124 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter/index.css";
+@import "@fontsource-variable/space-grotesk/index.css";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-void: #05070e;
+  --color-ink: #080d18;
+  --color-panel: #0d1424;
+  --color-line: #1b2438;
+  --color-haze: #94a7c9;
+  --color-star: #f4f7ff;
+  --color-flare: #67e8f9;
+  --color-nebula: #a78bfa;
+  --color-gold: #fbbf24;
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    @apply bg-void font-sans text-star antialiased;
+    background-image: radial-gradient(
+      60rem 60rem at 50% -10rem,
+      rgb(103 232 249 / 0.08),
+      transparent 70%
+    );
+    background-repeat: no-repeat;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-flare) 30%, transparent);
+    color: var(--color-star);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-flare);
+    outline-offset: 2px;
+  }
+
+  dialog::backdrop {
+    background-color: rgb(3 5 11 / 0.75);
+    backdrop-filter: blur(4px);
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-display text-xs font-medium tracking-[0.28em] text-flare uppercase;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-panel/60 px-3.5 py-1.5 text-sm text-haze transition-colors hover:border-flare/50 hover:text-star;
+  }
+
+  .chip-active {
+    @apply border-flare/70 bg-flare/10 text-flare;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-flare text-void hover:bg-flare/85;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-panel/70 px-4 py-2.5 text-sm font-medium text-star transition-colors hover:border-flare/50 hover:text-flare disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-line bg-ink px-3.5 py-2.5 text-sm text-star placeholder:text-haze/60 focus:border-flare/60 focus:ring-2 focus:ring-flare/20 focus:outline-none;
+  }
+
+  .field-error {
+    @apply border-rose-500/70 focus:border-rose-400 focus:ring-rose-400/20;
+  }
+}
+
+@utility starfield {
+  background-image:
+    radial-gradient(1px 1px at 12% 24%, rgb(255 255 255 / 0.55), transparent),
+    radial-gradient(1px 1px at 68% 12%, rgb(255 255 255 / 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 82% 62%, rgb(167 139 250 / 0.5), transparent),
+    radial-gradient(1px 1px at 32% 78%, rgb(255 255 255 / 0.35), transparent),
+    radial-gradient(1px 1px at 48% 44%, rgb(103 232 249 / 0.45), transparent),
+    radial-gradient(1px 1px at 92% 88%, rgb(255 255 255 / 0.3), transparent);
+  background-size: 620px 620px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility animate-rise {
+  animation: rise 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
