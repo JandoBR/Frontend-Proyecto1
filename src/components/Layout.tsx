@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useFavorites } from "../context/FavoritesContext";
+import { BackToTop } from "./BackToTop";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 const NAV_LINKS = [
   { to: "/", label: "Inicio", end: true },
@@ -143,7 +145,13 @@ export function Layout() {
       </header>
 
       <main id="contenido" className="flex-1">
-        <Outlet />
+        <ErrorBoundary
+          resetKey={pathname}
+          title="Esta vista no se pudo mostrar"
+          description="El encabezado y el menú siguen funcionando. Puedes reintentar o ir al inicio."
+        >
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       <footer className="border-t border-line/70 bg-ink/60">
@@ -185,6 +193,8 @@ export function Layout() {
           </nav>
         </div>
       </footer>
+
+      <BackToTop />
     </div>
   );
 }

@@ -67,8 +67,9 @@ export const MEDIA_FILTERS: { id: MediaFilter; label: string }[] = [
   { id: "image", label: "Fotos" },
   { id: "video", label: "Videos" },
   { id: "audio", label: "Audios" },
-  { id: "all", label: "Todo" },
 ];
+
+export const ALL_MEDIA_FILTER: { id: MediaFilter; label: string } = { id: "all", label: "Todo" };
 
 export function centerLabel(center: string | null): string | null {
   if (!center) return null;

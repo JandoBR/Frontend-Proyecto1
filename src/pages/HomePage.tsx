@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getItemById, getRandomItem, searchItems, type NasaItem } from "../api/nasa";
+import { getRandomItem, searchItems, type NasaItem } from "../api/nasa";
 import { ImageCard } from "../components/ImageCard";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { ErrorState } from "../components/ErrorState";
 import { THEMES, yearOf } from "../data/filters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -22,13 +23,13 @@ export function HomePage() {
     const controller = new AbortController();
     setStatus("loading");
 
-    // Dos fetches reales: uno por ID (la imagen editorial de portada) y uno de lista.
     Promise.all([
-      getItemById("carina_nebula", controller.signal),
+      searchItems({ q: "Carina Nebula", mediaType: "image", pageSize: 1 }, controller.signal),
       searchItems({ q: "nebula", mediaType: "image", pageSize: 4 }, controller.signal),
     ])
-      .then(([heroItem, list]) => {
+      .then(([heroResult, list]) => {
         if (controller.signal.aborted) return;
+        const heroItem = heroResult.items[0] ?? null;
         setHero(heroItem);
         setStrip(list.items);
         setStatus(heroItem || list.items.length > 0 ? "success" : "error");
@@ -181,13 +182,20 @@ export function HomePage() {
           ) : null}
 
           {status === "success" && strip.length > 0 ? (
-            <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {strip.map((item) => (
-                <li key={item.id} className="animate-rise">
-                  <ImageCard item={item} showFavorite={false} />
-                </li>
-              ))}
-            </ul>
+            <ErrorBoundary
+              compact
+              resetKey={strip.map((item) => item.id).join("|")}
+              title="No pudimos dibujar estas imágenes"
+              description="Puedes seguir usando el explorador."
+            >
+              <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {strip.map((item) => (
+                  <li key={item.id} className="animate-rise">
+                    <ImageCard item={item} showFavorite={false} />
+                  </li>
+                ))}
+              </ul>
+            </ErrorBoundary>
           ) : null}
         </div>
       </section>

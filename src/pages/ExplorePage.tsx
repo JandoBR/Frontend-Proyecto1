@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   getRandomItem,
@@ -9,6 +9,7 @@ import {
 } from "../api/nasa";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { EmptyState } from "../components/EmptyState";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { ErrorState } from "../components/ErrorState";
 import { FilterBar } from "../components/FilterBar";
 import { ImageGrid } from "../components/ImageGrid";
@@ -25,9 +26,7 @@ const PAGE_SIZE = 24;
 type Status = "loading" | "success" | "error";
 
 function parseMedia(value: string | null): MediaFilter {
-  return value === "image" || value === "video" || value === "audio" || value === "all"
-    ? value
-    : "image";
+  return value === "video" || value === "audio" ? value : "image";
 }
 
 export function ExplorePage() {
@@ -59,13 +58,18 @@ export function ExplorePage() {
   const [isRandomizing, setIsRandomizing] = useState(false);
   const [removing, setRemoving] = useState<NasaItem | null>(null);
 
-  const resetResults = useCallback(() => {
+  const resultsRef = useRef<HTMLElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingLock = useRef(false);
+
+  function resetResults() {
     setPage(1);
     setItems([]);
     setTotal(0);
     setStatus("loading");
     setError(null);
-  }, []);
+    if (page !== 1) resultsRef.current?.scrollIntoView({ block: "start" });
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -189,13 +193,39 @@ export function ExplorePage() {
 
   const reachable = Math.min(total, MAX_RESULTS);
   const isSearching = query !== debouncedQuery;
+  const canLoadMore = items.length > 0 && items.length < reachable && status === "success";
   const showInitialLoading = status === "loading" && items.length === 0;
   const showInitialError = status === "error" && items.length === 0;
   const showEmpty = status === "success" && items.length === 0;
 
+  useEffect(() => {
+    loadingLock.current = status === "loading";
+  }, [status]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !canLoadMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) loadMore();
+      },
+      { rootMargin: "600px 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [canLoadMore, items.length]);
+
+  function loadMore() {
+    if (loadingLock.current) return;
+    loadingLock.current = true;
+    setPage((value) => value + 1);
+  }
+
   let summary = "—";
   if (showInitialLoading) summary = "Buscando…";
-  else if (status === "success") summary = `${total.toLocaleString("es-AR")} resultados`;
+  else if (status === "success") summary = `${total.toLocaleString("es")} resultados`;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
@@ -226,7 +256,13 @@ export function ExplorePage() {
         />
       </div>
 
-      <section id="resultados" aria-labelledby="resultados-titulo" aria-busy={status === "loading"} className="mt-10">
+      <section
+        ref={resultsRef}
+        id="resultados"
+        aria-labelledby="resultados-titulo"
+        aria-busy={status === "loading"}
+        className="mt-10 scroll-mt-24"
+      >
         <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2 border-b border-line/60 pb-3">
           <h2 id="resultados-titulo" className="font-display text-lg font-semibold text-star">
             Resultados
@@ -265,33 +301,52 @@ export function ExplorePage() {
 
         {items.length > 0 ? (
           <>
-            <ImageGrid
-              items={items}
-              isFavorite={isFavorite}
-              onToggleFavorite={handleToggleFavorite}
-            />
+            <ErrorBoundary
+              compact
+              resetKey={`${debouncedQuery}|${theme}|${decade?.id}|${media}|${page}`}
+              title="No pudimos dibujar estos resultados"
+              description="La búsqueda sigue disponible. Reintenta o prueba con otros filtros."
+            >
+              <ImageGrid
+                items={items}
+                isFavorite={isFavorite}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            </ErrorBoundary>
 
             <div className="mt-10 flex flex-col items-center gap-3">
-              {items.length < reachable ? (
-                <button
-                  type="button"
-                  onClick={() => setPage((value) => value + 1)}
-                  disabled={status === "loading"}
-                  className="btn-ghost px-5"
-                >
-                  {status === "loading"
-                    ? "Cargando más…"
-                    : `Cargar más (${(reachable - items.length).toLocaleString("es-AR")} restantes)`}
-                </button>
-              ) : (
+              {status === "loading" ? (
+                <p className="flex items-center gap-2 text-xs text-haze">
+                  <span
+                    aria-hidden="true"
+                    className="size-4 animate-spin rounded-full border-2 border-line border-t-flare"
+                  />
+                  Cargando más resultados…
+                </p>
+              ) : null}
+
+              {canLoadMore ? (
+                <>
+                  <div ref={sentinelRef} aria-hidden="true" className="h-12 w-full" />
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    className="sr-only focus:not-sr-only focus:rounded-lg focus:border focus:border-flare/60 focus:bg-panel focus:px-4 focus:py-2 focus:text-sm focus:text-star"
+                  >
+                    Cargar más resultados
+                  </button>
+                </>
+              ) : null}
+
+              {status === "success" && items.length >= reachable && total <= reachable ? (
                 <p className="max-w-md text-center text-xs leading-relaxed text-haze">
                   Eso es todo lo que hay para esta búsqueda.
                 </p>
-              )}
+              ) : null}
 
               {total > reachable ? (
                 <p className="max-w-md text-center text-xs leading-relaxed text-haze/80">
-                  El archivo muestra hasta {MAX_RESULTS.toLocaleString("es-AR")} resultados por
+                  El archivo muestra hasta {MAX_RESULTS.toLocaleString("es")} resultados por
                   búsqueda. Suma un tema, una década o una palabra para llegar al resto.
                 </p>
               ) : null}

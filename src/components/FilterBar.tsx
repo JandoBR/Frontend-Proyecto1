@@ -1,5 +1,5 @@
 import type { Decade, Theme } from "../data/filters";
-import { DECADES, MEDIA_FILTERS, THEMES } from "../data/filters";
+import { ALL_MEDIA_FILTER, DECADES, MEDIA_FILTERS, THEMES } from "../data/filters";
 import type { MediaFilter } from "../api/nasa";
 
 interface FilterBarProps {
@@ -10,9 +10,11 @@ interface FilterBarProps {
   media: MediaFilter;
   onMediaChange: (media: MediaFilter) => void;
   onClear: () => void;
-  onRandom: () => void;
-  isRandomizing: boolean;
+  onRandom?: () => void;
+  isRandomizing?: boolean;
   hasActiveFilters: boolean;
+  /** Muestra además la opción "Todo" (útil sobre colecciones locales, no sobre la API). */
+  includeAllMedia?: boolean;
 }
 
 export function FilterBar({
@@ -24,13 +26,16 @@ export function FilterBar({
   onMediaChange,
   onClear,
   onRandom,
-  isRandomizing,
+  isRandomizing = false,
   hasActiveFilters,
+  includeAllMedia = false,
 }: FilterBarProps) {
+  const mediaFilters = includeAllMedia ? [ALL_MEDIA_FILTER, ...MEDIA_FILTERS] : MEDIA_FILTERS;
+
   return (
     <section aria-labelledby="filtros-titulo" className="rounded-2xl border border-line/80 bg-panel/50 p-4 sm:p-5">
       <h2 id="filtros-titulo" className="sr-only">
-        Filtros del archivo
+        Filtros
       </h2>
 
       <div role="group" aria-label="Filtrar por misión o tema" className="flex flex-wrap items-center gap-2">
@@ -84,7 +89,7 @@ export function FilterBar({
           aria-label="Filtrar por tipo de contenido"
           className="inline-flex gap-1 self-start rounded-xl border border-line bg-ink/60 p-1 sm:self-auto"
         >
-          {MEDIA_FILTERS.map((filter) => (
+          {mediaFilters.map((filter) => (
             <button
               key={filter.id}
               type="button"
@@ -109,24 +114,26 @@ export function FilterBar({
           </button>
         ) : null}
 
-        <button
-          type="button"
-          onClick={onRandom}
-          disabled={isRandomizing}
-          className="btn-ghost self-start text-xs sm:ml-auto sm:self-auto"
-          aria-busy={isRandomizing}
-        >
-          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="size-4">
-            <path
-              d="M4 4h3l6 12h3M4 16h3l2-4M13 4h3M14.5 2.5 17 4l-2.5 1.5M14.5 14.5 17 16l-2.5 1.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          {isRandomizing ? "Buscando…" : "Sorpréndeme"}
-        </button>
+        {onRandom ? (
+          <button
+            type="button"
+            onClick={onRandom}
+            disabled={isRandomizing}
+            className="btn-ghost self-start text-xs sm:ml-auto sm:self-auto"
+            aria-busy={isRandomizing}
+          >
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="size-4">
+              <path
+                d="M4 4h3l6 12h3M4 16h3l2-4M13 4h3M14.5 2.5 17 4l-2.5 1.5M14.5 14.5 17 16l-2.5 1.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {isRandomizing ? "Buscando…" : "Sorpréndeme"}
+          </button>
+        ) : null}
       </div>
     </section>
   );

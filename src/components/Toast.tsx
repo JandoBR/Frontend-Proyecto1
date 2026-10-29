@@ -65,7 +65,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-star">{toast.title}</p>
+        <p className="line-clamp-2 text-sm font-medium text-star">{toast.title}</p>
         {toast.message ? <p className="mt-0.5 text-xs leading-relaxed text-haze">{toast.message}</p> : null}
       </div>
 

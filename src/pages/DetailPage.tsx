@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getItemById, type NasaItem } from "../api/nasa";
+import { getAudioSource, getItemById, getVideoSource, type NasaItem } from "../api/nasa";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { EmptyState } from "../components/EmptyState";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { ErrorState } from "../components/ErrorState";
+import { AudioArtwork } from "../components/AudioArtwork";
 import { FavoriteButton } from "../components/FavoriteButton";
 import { LoadingState } from "../components/LoadingState";
 import { useFavorites } from "../context/FavoritesContext";
@@ -17,7 +19,7 @@ function formatDate(value: string): string {
   if (!value) return "Sin fecha";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("es", { day: "numeric", month: "long", year: "numeric" }).format(date);
 }
 
 export function DetailPage() {
@@ -31,6 +33,8 @@ export function DetailPage() {
   const [attempt, setAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [mediaSrc, setMediaSrc] = useState<string | null>(null);
+  const [mediaStatus, setMediaStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
 
   useDocumentTitle(item?.title ?? "Detalle");
 
@@ -64,6 +68,33 @@ export function DetailPage() {
 
     return () => controller.abort();
   }, [id, attempt]);
+
+  useEffect(() => {
+    if (!item || (item.mediaType !== "audio" && item.mediaType !== "video")) {
+      setMediaSrc(null);
+      setMediaStatus("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    setMediaSrc(null);
+    setMediaStatus("loading");
+
+    const loadSource = item.mediaType === "audio" ? getAudioSource : getVideoSource;
+
+    loadSource(item, controller.signal)
+      .then((url) => {
+        if (controller.signal.aborted) return;
+        setMediaSrc(url);
+        setMediaStatus(url ? "ready" : "error");
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setMediaStatus("error");
+      });
+
+    return () => controller.abort();
+  }, [item]);
 
   if (status === "loading") {
     return (
@@ -110,7 +141,6 @@ export function DetailPage() {
   const image = item.preview ?? item.original ?? item.thumb;
   const center = centerLabel(item.center);
   const nasaUrl = `https://images.nasa.gov/details-${item.id}`;
-  const isMediaOnly = item.mediaType !== "image";
 
   function handleFavorite() {
     if (!item) return;
@@ -152,38 +182,130 @@ export function DetailPage() {
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-10">
-        <figure className="m-0">
-          <div className="overflow-hidden rounded-2xl border border-line/80 bg-ink">
-            {image ? (
-              <img
-                src={image}
-                alt={item.title}
-                className="max-h-[70vh] w-full object-contain"
-                decoding="async"
-              />
+        <ErrorBoundary
+          compact
+          resetKey={item.id}
+          title="No pudimos mostrar el archivo"
+          description="La ficha de la pieza sigue disponible. Reintenta o ábrela en el archivo de la NASA."
+        >
+          <figure className="m-0">
+            {item.mediaType === "audio" ? (
+              <div className="overflow-hidden rounded-2xl border border-line/80 bg-panel/50">
+                <AudioArtwork seed={item.id} className="aspect-video w-full" />
+
+                <div className="p-4">
+                  {mediaStatus === "loading" ? (
+                    <p role="status" className="text-xs text-haze">
+                      Preparando el reproductor…
+                    </p>
+                  ) : null}
+
+                  {mediaSrc ? (
+                    <audio
+                      controls
+                      preload="metadata"
+                      src={mediaSrc}
+                      aria-label={`Reproducir audio: ${item.title}`}
+                      className="w-full"
+                    />
+                  ) : null}
+
+                  {mediaStatus === "error" ? (
+                    <p role="alert" className="text-xs leading-relaxed text-rose-300">
+                      No pudimos preparar el reproductor.{" "}
+                      <a
+                        href={nasaUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="underline underline-offset-4 hover:text-rose-200"
+                      >
+                        Escucharlo en el archivo de la NASA ↗
+                      </a>
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : item.mediaType === "video" ? (
+              <div className="overflow-hidden rounded-2xl border border-line/80 bg-ink">
+                {mediaStatus === "ready" && mediaSrc ? (
+                  <video
+                    controls
+                    preload="metadata"
+                    poster={item.preview ?? item.thumb ?? undefined}
+                    src={mediaSrc}
+                    aria-label={`Reproducir video: ${item.title}`}
+                    className="max-h-[70vh] w-full bg-void"
+                  />
+                ) : (
+                  <div className="relative grid aspect-video place-items-center">
+                    {image ? (
+                      <img
+                        src={image}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 h-full w-full object-cover opacity-40"
+                      />
+                    ) : null}
+                    <div className="relative px-5 text-center">
+                      {mediaStatus === "error" ? (
+                        <p role="alert" className="text-xs leading-relaxed text-rose-300">
+                          No pudimos cargar el video.{" "}
+                          <a
+                            href={nasaUrl}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="underline underline-offset-4 hover:text-rose-200"
+                          >
+                            Verlo en el archivo de la NASA ↗
+                          </a>
+                        </p>
+                      ) : (
+                        <p role="status" className="flex items-center justify-center gap-2 text-xs text-haze">
+                          <span
+                            aria-hidden="true"
+                            className="size-4 animate-spin rounded-full border-2 border-line border-t-flare"
+                          />
+                          Preparando el reproductor…
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="grid aspect-[4/3] place-items-center text-sm text-haze">
-                Sin imagen disponible
+              <div className="overflow-hidden rounded-2xl border border-line/80 bg-ink">
+                {image ? (
+                  <img
+                    src={image}
+                    alt={item.title}
+                    className="max-h-[70vh] w-full object-contain"
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="grid aspect-[4/3] place-items-center text-sm text-haze">
+                    Sin imagen disponible
+                  </div>
+                )}
               </div>
             )}
-          </div>
 
-          <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-haze">
-            <span>
-              {item.credit ? <>Crédito: {item.credit}</> : "Crédito en el archivo de la NASA"}
-            </span>
-            {item.original ? (
-              <a
-                href={item.original}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="underline decoration-line underline-offset-4 hover:text-flare"
-              >
-                Ver original ↗
-              </a>
-            ) : null}
-          </figcaption>
-        </figure>
+            <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-haze">
+              <span>
+                {item.credit ? <>Crédito: {item.credit}</> : "Crédito en el archivo de la NASA"}
+              </span>
+              {item.mediaType === "image" && item.original ? (
+                <a
+                  href={item.original}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="underline decoration-line underline-offset-4 hover:text-flare"
+                >
+                  Ver original ↗
+                </a>
+              ) : null}
+            </figcaption>
+          </figure>
+        </ErrorBoundary>
 
         <div>
           <p className="eyebrow">
@@ -212,13 +334,6 @@ export function DetailPage() {
                 </button>
               ) : null}
             </div>
-          ) : null}
-
-          {isMediaOnly ? (
-            <p role="note" className="mt-4 rounded-xl border border-line/70 bg-panel/60 p-3 text-xs leading-relaxed text-haze">
-              Esta pieza es un {MEDIA_LABELS[item.mediaType].toLowerCase()}. Mostramos su imagen de
-              referencia; el archivo original está en NASA.
-            </p>
           ) : null}
 
           <dl className="mt-6 grid grid-cols-1 gap-4 border-t border-line/70 pt-5 text-sm sm:grid-cols-2">

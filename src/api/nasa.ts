@@ -249,3 +249,62 @@ export async function getRandomItem(
 
   return result.items[Math.floor(Math.random() * result.items.length)] ?? null;
 }
+
+const AUDIO_PREFERENCES = [
+  /~128k\.mp3$/i,
+  /~64k\.mp3$/i,
+  /\.mp3$/i,
+  /~128k\.m4a$/i,
+  /~64k\.m4a$/i,
+  /\.(m4a|wav|ogg)$/i,
+];
+
+const VIDEO_PREFERENCES = [
+  /~small\.mp4$/i,
+  /~medium\.mp4$/i,
+  /~mobile\.mp4$/i,
+  /~preview\.mp4$/i,
+  /~large\.mp4$/i,
+  /\.mp4$/i,
+];
+
+/**
+ * Ni audios ni videos traen la URL del archivo en el resultado de búsqueda:
+ * hay que leer el manifiesto del elemento. Vive en el CDN sin CORS, pero la
+ * API expone la misma lista en `/asset/:id`.
+ */
+async function listAssetFiles(item: NasaItem, signal?: AbortSignal): Promise<string[]> {
+  const url = new URL(`${BASE_URL}/asset/${encodeURIComponent(item.id)}`);
+  const json = await request<{ collection?: { items?: { href?: string }[] } }>(url, signal);
+
+  return (json.collection?.items ?? [])
+    .map((entry) => entry.href)
+    .filter((href): href is string => Boolean(href))
+    .map((href) => new URL(href.replace(/^http:/, "https:")).href);
+}
+
+function pickFile(files: string[], preferences: RegExp[]): string | null {
+  for (const pattern of preferences) {
+    const match = files.find((file) => pattern.test(file));
+    if (match) return match;
+  }
+  return null;
+}
+
+export async function getAudioSource(
+  item: NasaItem,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  return pickFile(await listAssetFiles(item, signal), AUDIO_PREFERENCES);
+}
+
+/**
+ * El video original puede pesar más de 1 GB; elegimos una copia liviana
+ * (~small, ~medium) y dejamos que el navegador haga streaming con Range.
+ */
+export async function getVideoSource(
+  item: NasaItem,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  return pickFile(await listAssetFiles(item, signal), VIDEO_PREFERENCES);
+}

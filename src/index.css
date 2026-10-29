@@ -42,6 +42,11 @@
     outline-offset: 2px;
   }
 
+  audio,
+  video {
+    color-scheme: dark;
+  }
+
   dialog::backdrop {
     background-color: rgb(3 5 11 / 0.75);
     backdrop-filter: blur(4px);
