@@ -132,7 +132,7 @@ export function HomePage() {
           </Link>
         </div>
 
-        <ul className="mt-6 flex list-none flex-wrap gap-2">
+        <ul role="list" className="mt-6 flex list-none flex-wrap gap-2">
           {THEMES.map((theme) => (
             <li key={theme.id}>
               <Link to={`/explorar?tema=${theme.id}`} className="chip">
@@ -162,7 +162,7 @@ export function HomePage() {
 
         <div className="mt-6">
           {status === "loading" ? (
-            <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ul role="list" className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, index) => (
                 <li
                   key={index}
@@ -188,7 +188,7 @@ export function HomePage() {
               title="No pudimos dibujar estas imágenes"
               description="Puedes seguir usando el explorador."
             >
-              <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <ul role="list" className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {strip.map((item) => (
                   <li key={item.id} className="animate-rise">
                     <ImageCard item={item} showFavorite={false} />

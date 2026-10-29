@@ -10,7 +10,7 @@ interface ImageGridProps {
 
 export function ImageGrid({ items, isFavorite, onToggleFavorite, showFavorites = true }: ImageGridProps) {
   return (
-    <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <ul role="list" className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items.map((item) => (
         <li key={item.id} className="animate-rise">
           <ImageCard

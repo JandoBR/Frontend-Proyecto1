@@ -88,14 +88,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <ol
+      <aside
         aria-label="Notificaciones"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex list-none flex-col items-center gap-3 p-4 sm:items-end sm:p-6"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 p-4 sm:p-6"
       >
-        {toasts.map((toast) => (
-          <Toast key={toast.id} toast={toast} onDismiss={dismiss} />
-        ))}
-      </ol>
+        <ol role="list" className="flex list-none flex-col items-center gap-3 sm:items-end">
+          {toasts.map((toast) => (
+            <Toast key={toast.id} toast={toast} onDismiss={dismiss} />
+          ))}
+        </ol>
+      </aside>
     </ToastContext.Provider>
   );
 }

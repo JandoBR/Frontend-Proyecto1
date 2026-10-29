@@ -76,7 +76,7 @@ export function Layout() {
           </Link>
 
           <nav aria-label="Navegación principal" className="ml-auto hidden md:block">
-            <ul className="flex items-center gap-1">
+            <ul role="list" className="flex items-center gap-1">
               {NAV_LINKS.map((link) => (
                 <li key={link.to}>
                   <NavLink to={link.to} end={link.end} className={linkClass}>
@@ -118,7 +118,7 @@ export function Layout() {
 
         {menuOpen ? (
           <nav id="menu-movil" aria-label="Navegación móvil" className="border-t border-line/70 md:hidden">
-            <ul className="mx-auto flex w-full max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
+            <ul role="list" className="mx-auto flex w-full max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
               {NAV_LINKS.map((link) => (
                 <li key={link.to}>
                   <NavLink
@@ -173,7 +173,7 @@ export function Layout() {
           </div>
 
           <nav aria-label="Enlaces del pie">
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
+            <ul role="list" className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
               <li>
                 <Link to="/explorar" className="hover:text-flare">
                   Explorar

@@ -12,9 +12,9 @@ import { useEffect, useId, useRef, useState } from "react";
  *  2. Opción destructiva preseleccionada: "No volver a preguntar" viene
  *     marcada, de modo que la próxima vez el borrado ocurre sin confirmación.
  *     La fricción desaparece justo cuando más se necesita.
- *  3. Asimetría de jerarquía y área de toque: cancelar no es un botón, no tiene
- *     relleno ni contraste equivalente, así que el pulgar y la mirada caen en
- *     "Sí, vaciar todo".
+ *  3. Asimetría de jerarquía y área de toque: cancelar no es un botón ni tiene
+ *     relleno, así que el pulgar y la mirada caen en "Sí, vaciar todo". El texto
+ *     igual cumple contraste: la trampa es de tamaño y peso, no de legibilidad.
  *
  * Esto NO representa lo que recomendaríamos como UX: en un producto real la
  * opción segura va primero, con el mismo peso visual, y nunca se preselecciona
@@ -99,7 +99,7 @@ export function DarkPatternDialog({
         <button
           type="button"
           onClick={onCancel}
-          className="mt-2 w-full py-1 text-center text-xs text-haze/70 underline decoration-line underline-offset-4 transition-colors hover:text-haze"
+          className="mt-2 w-full py-1 text-center text-xs text-haze underline decoration-line underline-offset-4 transition-colors hover:text-star"
         >
           No, prefiero conservar mis favoritos
         </button>
@@ -114,7 +114,7 @@ export function DarkPatternDialog({
             className="mt-0.5 size-4 accent-rose-500"
           />
           <label htmlFor={rememberId} className="text-[11px] leading-relaxed text-haze">
-            No volver a preguntar <span className="text-haze/60">(recomendado: la próxima vez será automático)</span>
+            No volver a preguntar <span className="text-haze/85">(recomendado: la próxima vez será automático)</span>
           </label>
         </div>
       </div>

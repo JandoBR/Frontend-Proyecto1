@@ -64,9 +64,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </svg>
         </span>
 
-        <h2 className={`font-display font-semibold text-star ${compact ? "mt-3 text-base" : "mt-4 text-xl"}`}>
-          {title}
-        </h2>
+        {compact ? (
+          <h2 className="mt-3 font-display text-base font-semibold text-star">{title}</h2>
+        ) : (
+          <h1 className="mt-4 font-display text-xl font-semibold text-star">{title}</h1>
+        )}
         <p className="mt-1.5 max-w-md text-sm leading-relaxed text-haze">{description}</p>
 
         <div className="mt-4 flex flex-wrap justify-center gap-2">

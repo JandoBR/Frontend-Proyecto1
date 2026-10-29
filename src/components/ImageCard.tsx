@@ -85,7 +85,12 @@ export function ImageCard({ item, isFavorite = false, onToggleFavorite, showFavo
             {item.title}
           </Link>
         </h3>
-        {meta ? <p className="text-xs text-haze">{meta}</p> : null}
+        {meta ? (
+          <p className="text-xs text-haze">
+            {center ? `${center} · ` : null}
+            {item.date ? <time dateTime={item.date}>{year}</time> : null}
+          </p>
+        ) : null}
       </div>
     </article>
   );

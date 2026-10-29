@@ -99,6 +99,7 @@ export function DetailPage() {
   if (status === "loading") {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+        <h1 className="sr-only">Abriendo la ficha de la pieza</h1>
         <LoadingState message="Abriendo la ficha en el archivo…" />
       </div>
     );
@@ -107,6 +108,7 @@ export function DetailPage() {
   if (status === "error") {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+        <h1 className="sr-only">No pudimos abrir esta pieza</h1>
         <ErrorState
           message={error ?? "El archivo de la NASA no respondió."}
           onRetry={() => setAttempt((value) => value + 1)}
@@ -123,6 +125,7 @@ export function DetailPage() {
   if (status === "notfound" || !item) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+        <h1 className="sr-only">Pieza no encontrada</h1>
         <EmptyState
           icon="orbit"
           title="Ese elemento no está en el archivo"
@@ -162,7 +165,7 @@ export function DetailPage() {
   return (
     <article className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <nav aria-label="Miga de pan" className="mb-6">
-        <ol className="flex list-none flex-wrap items-center gap-2 text-xs text-haze">
+        <ol role="list" className="flex list-none flex-wrap items-center gap-2 text-xs text-haze">
           <li>
             <Link to="/" className="hover:text-flare">
               Inicio
@@ -339,7 +342,9 @@ export function DetailPage() {
           <dl className="mt-6 grid grid-cols-1 gap-4 border-t border-line/70 pt-5 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-[11px] font-medium tracking-wide text-haze uppercase">Fecha</dt>
-              <dd className="mt-1 text-star">{formatDate(item.date)}</dd>
+              <dd className="mt-1 text-star">
+                {item.date ? <time dateTime={item.date}>{formatDate(item.date)}</time> : "Sin fecha"}
+              </dd>
             </div>
             <div>
               <dt className="text-[11px] font-medium tracking-wide text-haze uppercase">Centro</dt>
@@ -360,7 +365,7 @@ export function DetailPage() {
               <h2 className="text-[11px] font-medium tracking-wide text-haze uppercase">
                 Palabras clave
               </h2>
-              <ul className="mt-2 flex list-none flex-wrap gap-2">
+              <ul role="list" className="mt-2 flex list-none flex-wrap gap-2">
                 {item.keywords.map((keyword) => (
                   <li key={keyword}>
                     <Link to={`/explorar?q=${encodeURIComponent(keyword)}`} className="chip py-1 text-xs">

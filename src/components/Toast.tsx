@@ -57,14 +57,13 @@ export function Toast({ toast, onDismiss }: ToastProps) {
 
   return (
     <li
-      role={toast.kind === "error" ? "alert" : "status"}
       className={`animate-rise pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border ${styles.ring} bg-panel/95 p-3.5 shadow-2xl shadow-black/40 backdrop-blur`}
     >
       <span className={`mt-0.5 shrink-0 ${styles.icon}`}>
         <ToastIcon kind={toast.kind} />
       </span>
 
-      <div className="min-w-0 flex-1">
+      <div role={toast.kind === "error" ? "alert" : "status"} className="min-w-0 flex-1">
         <p className="line-clamp-2 text-sm font-medium text-star">{toast.title}</p>
         {toast.message ? <p className="mt-0.5 text-xs leading-relaxed text-haze">{toast.message}</p> : null}
       </div>
