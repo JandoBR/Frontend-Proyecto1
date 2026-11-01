@@ -278,11 +278,11 @@ export function ContactPage() {
               {sending ? "Enviando…" : "Enviar mensaje"}
             </button>
 
-            <p id="envio-ayuda" className="mt-2 text-xs text-haze">
-              {isValid
-                ? "Todo listo: al enviar te pedimos una confirmación."
-                : "Completa los tres campos para habilitar el envío."}
-            </p>
+            {isValid ? (
+              <p id="envio-ayuda" className="mt-2 text-xs text-haze">
+                Todo listo: al enviar te pedimos una confirmación.
+              </p>
+            ) : null}
           </div>
         </form>
 

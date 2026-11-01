@@ -80,11 +80,6 @@ export function FavoritesPage() {
           <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-star sm:text-4xl">
             Tu colección
           </h1>
-          <p className="mt-2 text-sm text-haze">
-            {count === 0
-              ? "Todavía no guardaste nada."
-              : `${count} ${count === 1 ? "pieza guardada" : "piezas guardadas"} en este navegador.`}
-          </p>
         </div>
 
         {count > 0 ? (
