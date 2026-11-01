@@ -53,6 +53,7 @@ export function ContactPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [skipNextSubscription, setSkipNextSubscription] = useState(readSubscribePreference);
+  const [declineOpen, setDeclineOpen] = useState(false);
 
   const errors = validate(values);
   const isValid = Object.keys(errors).length === 0;
@@ -66,7 +67,14 @@ export function ContactPage() {
 
   function handleNewsletterChange(event: ChangeEvent<HTMLInputElement>) {
     const { checked } = event.target;
-    setValues((previous) => ({ ...previous, newsletter: checked }));
+
+    if (checked) {
+      setValues((previous) => ({ ...previous, newsletter: true }));
+      return;
+    }
+
+    // Desmarcarla no basta: otro diálogo intenta retener la suscripción (nagging).
+    setDeclineOpen(true);
   }
 
   function handleBlur(field: FieldName) {
@@ -322,6 +330,23 @@ export function ContactPage() {
         onConfirm={handleConfirmSend}
         onDecline={handleDeclineSubscription}
         onCancel={() => setConfirmOpen(false)}
+      />
+
+      <DarkPatternDialog
+        open={declineOpen}
+        title="¿Prefieres perderte las novedades?"
+        description="Un correo ocasional con lo mejor del archivo. Puedes darte de baja cuando quieras."
+        confirmLabel="Sí, quiero recibirlas"
+        declineLabel="No, prefiero perderme las novedades"
+        closeLabel="Cerrar y mantener la suscripción"
+        tone="default"
+        showRemember={false}
+        onConfirm={() => setDeclineOpen(false)}
+        onDecline={() => {
+          setValues((previous) => ({ ...previous, newsletter: false }));
+          setDeclineOpen(false);
+        }}
+        onCancel={() => setDeclineOpen(false)}
       />
     </div>
   );

@@ -1,13 +1,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 /*
- * Dark pattern intencional, requisito de la consigna. Solo este diálogo lo usa.
+ * Dark pattern intencional, requisito de la consigna. Solo estos diálogos lo usan.
  *
- * - Preselection: "No volver a preguntar" viene marcado, así que la próxima
- *   suscripción no pide confirmación. La casilla de novedades del formulario
- *   también viene marcada por defecto.
+ * - Preselection: la casilla de novedades del formulario viene marcada, y "No
+ *   volver a preguntar" también, así que la próxima suscripción no pide nada.
  * - Confirmshaming: rechazar se redacta como una pérdida y va como enlace gris
- *   minúsculo, frente a un botón rojo a todo el ancho.
+ *   minúsculo, frente a un botón a todo el ancho.
+ * - Nagging: al desmarcar la casilla se abre otro diálogo para retener la
+ *   suscripción, así que darse de baja cuesta más clics que suscribirse.
  *
  * En un producto real la opción segura iría primero, con el mismo peso, y el
  * consentimiento nunca estaría preseleccionado.
@@ -25,6 +26,8 @@ interface DarkPatternDialogProps {
   rememberLabel?: string;
   rememberHint?: string;
   closeLabel?: string;
+  tone?: "danger" | "default";
+  showRemember?: boolean;
 }
 
 export function DarkPatternDialog({
@@ -39,6 +42,8 @@ export function DarkPatternDialog({
   rememberLabel = "No volver a preguntar",
   rememberHint = "(recomendado)",
   closeLabel = "Cerrar sin confirmar",
+  tone = "danger",
+  showRemember = true,
 }: DarkPatternDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -92,7 +97,11 @@ export function DarkPatternDialog({
           {description}
         </p>
 
-        <button type="button" onClick={() => onConfirm(rememberChoice)} className="btn-danger mt-5 w-full">
+        <button
+          type="button"
+          onClick={() => onConfirm(rememberChoice)}
+          className={`${tone === "danger" ? "btn-danger" : "btn-primary"} mt-5 w-full`}
+        >
           {confirmLabel}
         </button>
 
@@ -106,18 +115,20 @@ export function DarkPatternDialog({
         </button>
 
         {/* Táctica 1: preferencia destructiva preseleccionada. */}
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-line/60 bg-ink/50 p-2.5">
-          <input
-            id={rememberId}
-            type="checkbox"
-            checked={rememberChoice}
-            onChange={(event) => setRememberChoice(event.target.checked)}
-            className="mt-0.5 size-4 accent-rose-500"
-          />
-          <label htmlFor={rememberId} className="text-[11px] leading-relaxed text-haze">
-            {rememberLabel} <span className="text-haze/85">{rememberHint}</span>
-          </label>
-        </div>
+        {showRemember ? (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-line/60 bg-ink/50 p-2.5">
+            <input
+              id={rememberId}
+              type="checkbox"
+              checked={rememberChoice}
+              onChange={(event) => setRememberChoice(event.target.checked)}
+              className="mt-0.5 size-4 accent-rose-500"
+            />
+            <label htmlFor={rememberId} className="text-[11px] leading-relaxed text-haze">
+              {rememberLabel} <span className="text-haze/85">{rememberHint}</span>
+            </label>
+          </div>
+        ) : null}
       </div>
     </dialog>
   );
