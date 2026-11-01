@@ -72,7 +72,7 @@ export function ContactPage() {
     setConfirmOpen(false);
     setSending(true);
 
-    // Demo sin backend: simulamos el envío para mostrar el estado y el toast.
+    // Simulamos el envío para mostrar el estado y el toast.
     window.setTimeout(() => {
       setSending(false);
       setValues(EMPTY_FORM);
@@ -91,8 +91,7 @@ export function ContactPage() {
           Escríbenos
         </h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-haze">
-          ¿Viste algo raro en el archivo? ¿Falta una misión? Déjanos un mensaje: el formulario es
-          real en cuanto a validación, aunque todavía no tiene backend.
+          ¿Viste algo raro en el archivo? ¿Falta una misión? Déjanos un mensaje y lo revisamos.
         </p>
       </header>
 
@@ -235,10 +234,6 @@ export function ContactPage() {
               <li>Ideas de filtros o misiones para sumar.</li>
             </ul>
           </div>
-
-          <p role="note" className="rounded-xl border border-line/60 bg-ink/50 p-4 text-xs leading-relaxed text-haze">
-            Formulario de demostración: valida y confirma, pero no envía datos a ningún servidor.
-          </p>
         </aside>
       </div>
 
