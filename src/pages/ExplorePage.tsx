@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   getRandomItem,
   MAX_RESULTS,
@@ -16,8 +16,9 @@ import { ImageGrid } from "../components/ImageGrid";
 import { LoadingState } from "../components/LoadingState";
 import { SearchBar } from "../components/SearchBar";
 import { useFavorites } from "../context/FavoritesContext";
+import { parseExploreSearch, useFilters } from "../context/FiltersContext";
 import { useToast } from "../context/ToastContext";
-import { DECADES, THEMES, yearOf, type Decade } from "../data/filters";
+import { DECADES, THEMES, yearOf } from "../data/filters";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
@@ -25,28 +26,18 @@ const PAGE_SIZE = 24;
 
 type Status = "loading" | "success" | "error";
 
-function parseMedia(value: string | null): MediaFilter {
-  return value === "video" || value === "audio" ? value : "image";
-}
-
 export function ExplorePage() {
   useDocumentTitle("Explorar");
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
   const { isFavorite, add, remove } = useFavorites();
+  const { explore, updateExplore, resetExplore } = useFilters();
 
-  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const { query, theme, decade, media } = explore;
   const debouncedQuery = useDebouncedValue(query, 400);
-
-  const [theme, setTheme] = useState<string | null>(
-    () => THEMES.find((entry) => entry.id === searchParams.get("tema"))?.keyword ?? null,
-  );
-  const [decade, setDecade] = useState<Decade | null>(
-    () => DECADES.find((entry) => entry.id === searchParams.get("decada")) ?? null,
-  );
-  const [media, setMedia] = useState<MediaFilter>(() => parseMedia(searchParams.get("tipo")));
 
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<NasaItem[]>([]);
@@ -61,6 +52,7 @@ export function ExplorePage() {
   const resultsRef = useRef<HTMLElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingLock = useRef(false);
+  const writtenSearch = useRef<string | null>(null);
 
   function resetResults() {
     setPage(1);
@@ -104,6 +96,16 @@ export function ExplorePage() {
     return () => controller.abort();
   }, [debouncedQuery, theme, decade, media, page, attempt]);
 
+  // Los enlaces internos con parámetros (`?q=`, `?tema=`, ...) mandan al entrar.
+  // Un enlace sin parámetros, en cambio, conserva los filtros guardados.
+  useEffect(() => {
+    const search = location.search.replace(/^\?/, "");
+    if (search === writtenSearch.current) return;
+
+    const fromUrl = parseExploreSearch(search);
+    if (fromUrl) updateExplore(fromUrl);
+  }, [location.search, updateExplore]);
+
   // La URL refleja los filtros: se puede compartir el estado y el botón "atrás" funciona.
   useEffect(() => {
     const next = new URLSearchParams();
@@ -113,36 +115,34 @@ export function ExplorePage() {
     if (decade) next.set("decada", decade.id);
     if (media !== "image") next.set("tipo", media);
 
+    writtenSearch.current = next.toString();
     setSearchParams(next, { replace: true });
-  }, [debouncedQuery, theme, decade, media, setSearchParams]);
+  }, [debouncedQuery, theme, decade, media, location.search, setSearchParams]);
 
   const hasActiveFilters = Boolean(query.trim() || theme || decade || media !== "image");
 
   function handleQueryChange(value: string) {
-    setQuery(value);
+    updateExplore({ query: value });
     if (page !== 1) resetResults();
   }
 
   function handleThemeChange(keyword: string | null) {
-    setTheme(keyword);
+    updateExplore({ theme: keyword });
     resetResults();
   }
 
   function handleDecadeChange(id: string) {
-    setDecade(DECADES.find((entry) => entry.id === id) ?? null);
+    updateExplore({ decade: DECADES.find((entry) => entry.id === id) ?? null });
     resetResults();
   }
 
   function handleMediaChange(next: MediaFilter) {
-    setMedia(next);
+    updateExplore({ media: next });
     resetResults();
   }
 
   function handleClear() {
-    setQuery("");
-    setTheme(null);
-    setDecade(null);
-    setMedia("image");
+    resetExplore();
     resetResults();
   }
 

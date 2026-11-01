@@ -71,6 +71,11 @@ export const MEDIA_FILTERS: { id: MediaFilter; label: string }[] = [
 
 export const ALL_MEDIA_FILTER: { id: MediaFilter; label: string } = { id: "all", label: "Todo" };
 
+/** Normaliza el parámetro `tipo` de la URL (y cualquier valor externo). */
+export function parseMediaFilter(value: string | null): MediaFilter {
+  return value === "video" || value === "audio" ? value : "image";
+}
+
 export function centerLabel(center: string | null): string | null {
   if (!center) return null;
   return CENTER_LABELS[center] ?? center;

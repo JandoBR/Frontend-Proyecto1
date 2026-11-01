@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import type { MediaFilter, NasaItem } from "../api/nasa";
+import type { NasaItem } from "../api/nasa";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { DarkPatternDialog } from "../components/DarkPatternDialog";
 import { EmptyState } from "../components/EmptyState";
@@ -9,8 +9,9 @@ import { FilterBar } from "../components/FilterBar";
 import { ImageGrid } from "../components/ImageGrid";
 import { SearchBar } from "../components/SearchBar";
 import { useFavorites } from "../context/FavoritesContext";
+import { useFilters } from "../context/FiltersContext";
 import { useToast } from "../context/ToastContext";
-import { DECADES, yearOf, type Decade } from "../data/filters";
+import { DECADES, yearOf } from "../data/filters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 const SKIP_KEY = "orbita:recordar-vaciado:v1";
@@ -26,12 +27,10 @@ function readSkipPreference(): boolean {
 export function FavoritesPage() {
   useDocumentTitle("Favoritos");
   const { favorites, count, isFavorite, remove, clear } = useFavorites();
+  const { favorites: filters, updateFavorites, resetFavorites } = useFilters();
   const toast = useToast();
 
-  const [query, setQuery] = useState("");
-  const [theme, setTheme] = useState<string | null>(null);
-  const [decade, setDecade] = useState<Decade | null>(null);
-  const [media, setMedia] = useState<MediaFilter>("all");
+  const { query, theme, decade, media } = filters;
 
   const [removing, setRemoving] = useState<NasaItem | null>(null);
   const [clearOpen, setClearOpen] = useState(false);
@@ -60,10 +59,7 @@ export function FavoritesPage() {
   }, [favorites, query, theme, decade, media]);
 
   function handleClearFilters() {
-    setQuery("");
-    setTheme(null);
-    setDecade(null);
-    setMedia("all");
+    resetFavorites();
   }
 
   function handleRequestClear() {
@@ -134,17 +130,19 @@ export function FavoritesPage() {
         <div className="mt-8 space-y-4">
           <SearchBar
             value={query}
-            onChange={setQuery}
+            onChange={(value) => updateFavorites({ query: value })}
             label="Buscar en tus favoritos"
             placeholder="Buscar en tu colección…"
           />
           <FilterBar
             theme={theme}
-            onThemeChange={setTheme}
+            onThemeChange={(keyword) => updateFavorites({ theme: keyword })}
             decade={decade}
-            onDecadeChange={(id) => setDecade(DECADES.find((entry) => entry.id === id) ?? null)}
+            onDecadeChange={(id) =>
+              updateFavorites({ decade: DECADES.find((entry) => entry.id === id) ?? null })
+            }
             media={media}
-            onMediaChange={setMedia}
+            onMediaChange={(next) => updateFavorites({ media: next })}
             onClear={handleClearFilters}
             hasActiveFilters={hasActiveFilters}
             includeAllMedia
