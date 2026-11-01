@@ -9,7 +9,7 @@ interface ImageCardProps {
   isFavorite?: boolean;
   onToggleFavorite?: (item: NasaItem) => void;
   showFavorite?: boolean;
-  /** Vista desde la que se abre el detalle, para que la miga de pan vuelva ahí. */
+  /** Vista desde la que se abre el detalle, para que el breadcrumb vuelva ahí. */
   origin?: "/explorar" | "/favoritos";
 }
 

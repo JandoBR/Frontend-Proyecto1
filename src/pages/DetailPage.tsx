@@ -9,6 +9,7 @@ import { AudioArtwork } from "../components/AudioArtwork";
 import { FavoriteButton } from "../components/FavoriteButton";
 import { LoadingState } from "../components/LoadingState";
 import { useFavorites } from "../context/FavoritesContext";
+import { useItemsCache } from "../context/ItemsCacheContext";
 import { useToast } from "../context/ToastContext";
 import { MEDIA_LABELS, centerLabel, yearOf } from "../data/filters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -28,13 +29,16 @@ export function DetailPage() {
   const toast = useToast();
   const { isFavorite, add, remove } = useFavorites();
 
-  // La tarjeta indica desde qué vista se abrió la ficha: la miga de pan vuelve ahí.
+  // La tarjeta indica desde qué vista se abrió la ficha: el breadcrumb vuelve ahí.
   const fromFavorites = (location.state as { from?: string } | null)?.from === "/favoritos";
   const backHref = fromFavorites ? "/favoritos" : "/explorar";
   const backLabel = fromFavorites ? "Favoritos" : "Explorar";
 
-  const [item, setItem] = useState<NasaItem | null>(null);
-  const [status, setStatus] = useState<Status>("loading");
+  const { get: getCachedItem, setMany: cacheItems } = useItemsCache();
+  const cachedItem = id ? getCachedItem(id) : undefined;
+
+  const [item, setItem] = useState<NasaItem | null>(cachedItem ?? null);
+  const [status, setStatus] = useState<Status>(cachedItem ? "success" : "loading");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -50,10 +54,19 @@ export function DetailPage() {
       return;
     }
 
+    setExpanded(false);
+
+    const cached = getCachedItem(id);
+    if (cached) {
+      setItem(cached);
+      setStatus("success");
+      setError(null);
+      return;
+    }
+
     const controller = new AbortController();
     setStatus("loading");
     setError(null);
-    setExpanded(false);
 
     getItemById(id, controller.signal)
       .then((result) => {
@@ -63,6 +76,7 @@ export function DetailPage() {
           return;
         }
         setItem(result);
+        cacheItems([result]);
         setStatus("success");
       })
       .catch((cause: unknown) => {
@@ -73,7 +87,7 @@ export function DetailPage() {
       });
 
     return () => controller.abort();
-  }, [id, attempt]);
+  }, [id, attempt, getCachedItem, cacheItems]);
 
   useEffect(() => {
     if (!item || (item.mediaType !== "audio" && item.mediaType !== "video")) {
@@ -170,7 +184,7 @@ export function DetailPage() {
 
   return (
     <article className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-      <nav aria-label="Miga de pan" className="mb-6">
+      <nav aria-label="Breadcrumb" className="mb-6">
         <ol role="list" className="flex list-none flex-wrap items-center gap-2 text-xs text-haze">
           <li>
             <Link to="/" className="hover:text-flare">

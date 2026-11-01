@@ -17,6 +17,8 @@ import { LoadingState } from "../components/LoadingState";
 import { SearchBar } from "../components/SearchBar";
 import { useFavorites } from "../context/FavoritesContext";
 import { parseExploreSearch, useFilters } from "../context/FiltersContext";
+import { useExploreResults } from "../context/ExploreResultsContext";
+import { useItemsCache } from "../context/ItemsCacheContext";
 import { useToast } from "../context/ToastContext";
 import { DECADES, THEMES, yearOf } from "../data/filters";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
@@ -39,10 +41,15 @@ export function ExplorePage() {
   const { query, theme, decade, media } = explore;
   const debouncedQuery = useDebouncedValue(query, 400);
 
-  const [page, setPage] = useState(1);
-  const [items, setItems] = useState<NasaItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [status, setStatus] = useState<Status>("loading");
+  const { snapshot, save, scrollY } = useExploreResults();
+  const { setMany: cacheItems } = useItemsCache();
+  const resultsKey = [debouncedQuery.trim(), theme ?? "", decade?.id ?? "", media].join("|");
+  const cachedResults = useRef(snapshot?.key === resultsKey ? snapshot : null);
+
+  const [page, setPage] = useState(() => cachedResults.current?.page ?? 1);
+  const [items, setItems] = useState<NasaItem[]>(() => cachedResults.current?.items ?? []);
+  const [total, setTotal] = useState(() => cachedResults.current?.total ?? 0);
+  const [status, setStatus] = useState<Status>(cachedResults.current ? "success" : "loading");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -64,6 +71,12 @@ export function ExplorePage() {
   }
 
   useEffect(() => {
+    const cached = cachedResults.current;
+    if (cached && cached.key === resultsKey && page === cached.page) return;
+
+    // Cualquier otra consulta invalida la búsqueda guardada.
+    cachedResults.current = null;
+
     const controller = new AbortController();
     setStatus("loading");
     setError(null);
@@ -94,7 +107,36 @@ export function ExplorePage() {
       });
 
     return () => controller.abort();
-  }, [debouncedQuery, theme, decade, media, page, attempt]);
+  }, [debouncedQuery, theme, decade, media, page, attempt, resultsKey]);
+
+  // Guarda la búsqueda para poder volver a ella sin repetir la petición.
+  useEffect(() => {
+    if (status !== "success") return;
+    save({ key: resultsKey, items, total, page });
+    cacheItems(items);
+  }, [status, items, total, page, resultsKey, save, cacheItems]);
+
+  // La posición del scroll se registra sin provocar renders.
+  useEffect(() => {
+    const record = () => {
+      scrollY.current = window.scrollY;
+    };
+    window.addEventListener("scroll", record, { passive: true });
+    return () => window.removeEventListener("scroll", record);
+  }, [scrollY]);
+
+  // Al volver a una búsqueda cacheada, devuelve el scroll donde estaba.
+  // Va en un frame para que gane el ScrollToTop del layout, que corre al cambiar de ruta.
+  const restoreScroll = useRef(cachedResults.current ? scrollY.current : 0);
+  useEffect(() => {
+    const target = restoreScroll.current;
+    if (target === 0) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: target, behavior: "instant" as ScrollBehavior });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   // Los enlaces internos con parámetros (`?q=`, `?tema=`, ...) mandan al entrar.
   // Un enlace sin parámetros, en cambio, conserva los filtros guardados.

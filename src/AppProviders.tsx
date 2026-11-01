@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import { FiltersProvider } from "./context/FiltersContext";
+import { ExploreResultsProvider } from "./context/ExploreResultsContext";
+import { ItemsCacheProvider } from "./context/ItemsCacheContext";
 import { ToastProvider } from "./context/ToastContext";
 
 /**
@@ -10,9 +12,13 @@ import { ToastProvider } from "./context/ToastContext";
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <FiltersProvider>
-      <FavoritesProvider>
-        <ToastProvider>{children}</ToastProvider>
-      </FavoritesProvider>
+      <ItemsCacheProvider>
+        <ExploreResultsProvider>
+          <FavoritesProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </FavoritesProvider>
+        </ExploreResultsProvider>
+      </ItemsCacheProvider>
     </FiltersProvider>
   );
 }
