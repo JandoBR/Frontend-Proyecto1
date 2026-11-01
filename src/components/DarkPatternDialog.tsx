@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 /*
- * Dark pattern intencional, requisito de la consigna. Solo estos diálogos lo usan.
+ * Dark pattern intencional.
  *
  * - Preselection: la casilla de novedades del formulario viene marcada, y "No
  *   volver a preguntar" también, así que la próxima suscripción no pide nada.
@@ -10,8 +10,6 @@ import { useEffect, useId, useRef, useState } from "react";
  * - Nagging: al desmarcar la casilla se abre otro diálogo para retener la
  *   suscripción, así que darse de baja cuesta más clics que suscribirse.
  *
- * En un producto real la opción segura iría primero, con el mismo peso, y el
- * consentimiento nunca estaría preseleccionado.
  */
 
 interface DarkPatternDialogProps {
