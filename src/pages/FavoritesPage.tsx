@@ -160,6 +160,7 @@ export function FavoritesPage() {
                 items={visible}
                 isFavorite={isFavorite}
                 onToggleFavorite={handleToggleFavorite}
+                origin="/favoritos"
               />
             </ErrorBoundary>
           </>

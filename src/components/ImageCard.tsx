@@ -9,6 +9,8 @@ interface ImageCardProps {
   isFavorite?: boolean;
   onToggleFavorite?: (item: NasaItem) => void;
   showFavorite?: boolean;
+  /** Vista desde la que se abre el detalle, para que la miga de pan vuelva ahí. */
+  origin?: "/explorar" | "/favoritos";
 }
 
 function ThumbPlaceholder() {
@@ -23,15 +25,17 @@ function ThumbPlaceholder() {
   );
 }
 
-export function ImageCard({ item, isFavorite = false, onToggleFavorite, showFavorite = true }: ImageCardProps) {
+export function ImageCard({ item, isFavorite = false, onToggleFavorite, showFavorite = true, origin }: ImageCardProps) {
   const year = yearOf(item.date);
   const center = centerLabel(item.center);
   const meta = [center, year].filter(Boolean).join(" · ");
+  const detailState = origin ? { from: origin } : undefined;
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line/80 bg-panel/70 transition-colors hover:border-flare/40">
       <Link
         to={`/explorar/${item.id}`}
+        state={detailState}
         aria-label={`Ver detalle de «${item.title}»`}
         className="relative block aspect-[4/3] overflow-hidden bg-ink"
       >
@@ -81,7 +85,7 @@ export function ImageCard({ item, isFavorite = false, onToggleFavorite, showFavo
           className="font-display text-[15px] leading-snug font-semibold break-words text-star line-clamp-2"
           title={item.title}
         >
-          <Link to={`/explorar/${item.id}`} className="hover:text-flare">
+          <Link to={`/explorar/${item.id}`} state={detailState} className="hover:text-flare">
             {item.title}
           </Link>
         </h3>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { getAudioSource, getItemById, getVideoSource, type NasaItem } from "../api/nasa";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { EmptyState } from "../components/EmptyState";
@@ -24,8 +24,14 @@ function formatDate(value: string): string {
 
 export function DetailPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const toast = useToast();
   const { isFavorite, add, remove } = useFavorites();
+
+  // La tarjeta indica desde qué vista se abrió la ficha: la miga de pan vuelve ahí.
+  const fromFavorites = (location.state as { from?: string } | null)?.from === "/favoritos";
+  const backHref = fromFavorites ? "/favoritos" : "/explorar";
+  const backLabel = fromFavorites ? "Favoritos" : "Explorar";
 
   const [item, setItem] = useState<NasaItem | null>(null);
   const [status, setStatus] = useState<Status>("loading");
@@ -114,8 +120,8 @@ export function DetailPage() {
           onRetry={() => setAttempt((value) => value + 1)}
         />
         <div className="mt-6 text-center">
-          <Link to="/explorar" className="text-sm text-haze underline underline-offset-4 hover:text-flare">
-            Volver al explorador
+          <Link to={backHref} className="text-sm text-haze underline underline-offset-4 hover:text-flare">
+            Volver a {fromFavorites ? "favoritos" : "al explorador"}
           </Link>
         </div>
       </div>
@@ -131,8 +137,8 @@ export function DetailPage() {
           title="Ese elemento no está en el archivo"
           description="El enlace puede estar mal escrito o la pieza ya no está publicada. Prueba desde el explorador."
           action={
-            <Link to="/explorar" className="btn-primary">
-              Ir al explorador
+            <Link to={backHref} className="btn-primary">
+              Ir a {fromFavorites ? "favoritos" : "al explorador"}
             </Link>
           }
         />
@@ -173,8 +179,8 @@ export function DetailPage() {
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link to="/explorar" className="hover:text-flare">
-              Explorar
+            <Link to={backHref} className="hover:text-flare">
+              {backLabel}
             </Link>
           </li>
           <li aria-hidden="true">/</li>

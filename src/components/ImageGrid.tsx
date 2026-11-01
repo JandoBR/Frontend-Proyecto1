@@ -6,9 +6,16 @@ interface ImageGridProps {
   isFavorite: (id: string) => boolean;
   onToggleFavorite?: (item: NasaItem) => void;
   showFavorites?: boolean;
+  origin?: "/explorar" | "/favoritos";
 }
 
-export function ImageGrid({ items, isFavorite, onToggleFavorite, showFavorites = true }: ImageGridProps) {
+export function ImageGrid({
+  items,
+  isFavorite,
+  onToggleFavorite,
+  showFavorites = true,
+  origin,
+}: ImageGridProps) {
   return (
     <ul role="list" className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items.map((item) => (
@@ -18,6 +25,7 @@ export function ImageGrid({ items, isFavorite, onToggleFavorite, showFavorites =
             isFavorite={isFavorite(item.id)}
             onToggleFavorite={onToggleFavorite}
             showFavorite={showFavorites}
+            origin={origin}
           />
         </li>
       ))}
