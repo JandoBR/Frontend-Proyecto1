@@ -1,25 +1,16 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 /*
- * ⚠️ DARK PATTERN INTENCIONAL — requisito de la consigna.
+ * Dark pattern intencional, requisito de la consigna. Solo este diálogo lo usa.
  *
- * Este diálogo (y solo este, para vaciar todos los favoritos) aplica tres
- * tácticas de manipulación a propósito:
+ * - Preselection: "No volver a preguntar" viene marcado, así que la próxima
+ *   suscripción no pide confirmación. La casilla de novedades del formulario
+ *   también viene marcada por defecto.
+ * - Confirmshaming: rechazar se redacta como una pérdida y va como enlace gris
+ *   minúsculo, frente a un botón rojo a todo el ancho.
  *
- *  1. Confirmshaming: la salida se redacta como una preferencia vergonzante
- *     ("No, prefiero conservar mis favoritos") y se dibuja como un enlace gris
- *     minúsculo, mientras la acción destructiva es un botón rojo dominante.
- *  2. Opción destructiva preseleccionada: "No volver a preguntar" viene
- *     marcada, de modo que la próxima vez el borrado ocurre sin confirmación.
- *     La fricción desaparece justo cuando más se necesita.
- *  3. Asimetría de jerarquía y área de toque: cancelar no es un botón ni tiene
- *     relleno, así que el pulgar y la mirada caen en "Sí, vaciar todo". El texto
- *     igual cumple contraste: la trampa es de tamaño y peso, no de legibilidad.
- *
- * Esto NO representa lo que recomendaríamos como UX: en un producto real la
- * opción segura va primero, con el mismo peso visual, y nunca se preselecciona
- * una preferencia destructiva. Está aislado a esta acción para poder señalarlo
- * y explicarlo en la defensa del proyecto.
+ * En un producto real la opción segura iría primero, con el mismo peso, y el
+ * consentimiento nunca estaría preseleccionado.
  */
 
 interface DarkPatternDialogProps {
@@ -27,8 +18,13 @@ interface DarkPatternDialogProps {
   title: string;
   description: string;
   confirmLabel: string;
+  declineLabel: string;
   onConfirm: (rememberChoice: boolean) => void;
+  onDecline: () => void;
   onCancel: () => void;
+  rememberLabel?: string;
+  rememberHint?: string;
+  closeLabel?: string;
 }
 
 export function DarkPatternDialog({
@@ -36,8 +32,13 @@ export function DarkPatternDialog({
   title,
   description,
   confirmLabel,
+  declineLabel,
   onConfirm,
+  onDecline,
   onCancel,
+  rememberLabel = "No volver a preguntar",
+  rememberHint = "(recomendado)",
+  closeLabel = "Cerrar sin confirmar",
 }: DarkPatternDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -50,7 +51,7 @@ export function DarkPatternDialog({
     if (!dialog) return;
 
     if (open && !dialog.open) {
-      // Cada apertura vuelve al estado preseleccionado (táctica 2).
+      // Cada apertura vuelve al estado preseleccionado (táctica 1).
       setRememberChoice(true);
       dialog.showModal();
     } else if (!open && dialog.open) {
@@ -76,7 +77,7 @@ export function DarkPatternDialog({
         <button
           type="button"
           onClick={onCancel}
-          aria-label="Cerrar sin vaciar favoritos"
+          aria-label={closeLabel}
           className="absolute top-3 right-3 rounded-md p-1.5 text-haze transition-colors hover:bg-line/60 hover:text-star"
         >
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="size-4">
@@ -95,16 +96,16 @@ export function DarkPatternDialog({
           {confirmLabel}
         </button>
 
-        {/* Táctica 1: la opción segura como enlace pequeño y de bajo contraste. */}
+        {/* Táctica 2: la opción segura como enlace pequeño y de bajo contraste. */}
         <button
           type="button"
-          onClick={onCancel}
+          onClick={onDecline}
           className="mt-2 w-full py-1 text-center text-xs text-haze underline decoration-line underline-offset-4 transition-colors hover:text-star"
         >
-          No, prefiero conservar mis favoritos
+          {declineLabel}
         </button>
 
-        {/* Táctica 2: preferencia destructiva preseleccionada. */}
+        {/* Táctica 1: preferencia destructiva preseleccionada. */}
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-line/60 bg-ink/50 p-2.5">
           <input
             id={rememberId}
@@ -114,7 +115,7 @@ export function DarkPatternDialog({
             className="mt-0.5 size-4 accent-rose-500"
           />
           <label htmlFor={rememberId} className="text-[11px] leading-relaxed text-haze">
-            No volver a preguntar <span className="text-haze/85">(recomendado: la próxima vez será automático)</span>
+            {rememberLabel} <span className="text-haze/85">{rememberHint}</span>
           </label>
         </div>
       </div>

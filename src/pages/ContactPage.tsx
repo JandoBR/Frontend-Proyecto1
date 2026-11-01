@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { ConfirmDialog } from "../components/ConfirmDialog";
+import { DarkPatternDialog } from "../components/DarkPatternDialog";
 import { useToast } from "../context/ToastContext";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
@@ -7,13 +7,24 @@ interface FormValues {
   name: string;
   email: string;
   message: string;
+  newsletter: boolean;
 }
 
-type FieldName = keyof FormValues;
+type FieldName = "name" | "email" | "message";
 type FormErrors = Partial<Record<FieldName, string>>;
 
-const EMPTY_FORM: FormValues = { name: "", email: "", message: "" };
+// La casilla de novedades nace marcada: parte del dark pattern del envío.
+const EMPTY_FORM: FormValues = { name: "", email: "", message: "", newsletter: true };
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const SUBSCRIBE_KEY = "orbita:recordar-suscripcion:v1";
+
+function readSubscribePreference(): boolean {
+  try {
+    return window.localStorage.getItem(SUBSCRIBE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 function validate(values: FormValues): FormErrors {
   const errors: FormErrors = {};
@@ -41,6 +52,7 @@ export function ContactPage() {
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [skipNextSubscription, setSkipNextSubscription] = useState(readSubscribePreference);
 
   const errors = validate(values);
   const isValid = Object.keys(errors).length === 0;
@@ -50,6 +62,11 @@ export function ContactPage() {
       const { value } = event.target;
       setValues((previous) => ({ ...previous, [field]: value }));
     };
+  }
+
+  function handleNewsletterChange(event: ChangeEvent<HTMLInputElement>) {
+    const { checked } = event.target;
+    setValues((previous) => ({ ...previous, newsletter: checked }));
   }
 
   function handleBlur(field: FieldName) {
@@ -65,11 +82,41 @@ export function ContactPage() {
       return;
     }
 
+    if (!values.newsletter) {
+      send(false);
+      return;
+    }
+
+    if (skipNextSubscription) {
+      // Preferencia recordada desde el diálogo: se suscribe sin preguntar.
+      send(true);
+      return;
+    }
+
     setConfirmOpen(true);
   }
 
-  function handleConfirmSend() {
+  function handleConfirmSend(rememberChoice: boolean) {
     setConfirmOpen(false);
+
+    if (rememberChoice) {
+      try {
+        window.localStorage.setItem(SUBSCRIBE_KEY, "1");
+      } catch {
+        // Sin almacenamiento disponible, la preferencia vive solo en memoria.
+      }
+      setSkipNextSubscription(true);
+    }
+
+    send(true);
+  }
+
+  function handleDeclineSubscription() {
+    setConfirmOpen(false);
+    send(false);
+  }
+
+  function send(subscribed: boolean) {
     setSending(true);
 
     // Simulamos el envío para mostrar el estado y el toast.
@@ -77,7 +124,12 @@ export function ContactPage() {
       setSending(false);
       setValues(EMPTY_FORM);
       setTouched({});
-      toast.success("Mensaje enviado", "Gracias por escribirnos. Te responderemos a la brevedad.");
+      toast.success(
+        "Mensaje enviado",
+        subscribed
+          ? "Gracias por escribirnos. También te sumamos a las novedades del archivo."
+          : "Gracias por escribirnos. Te responderemos a la brevedad.",
+      );
     }, 700);
   }
 
@@ -196,6 +248,23 @@ export function ContactPage() {
             </div>
           </div>
 
+          <div className="mt-5 flex items-start gap-2.5">
+            <input
+              id="newsletter"
+              name="newsletter"
+              type="checkbox"
+              checked={values.newsletter}
+              onChange={handleNewsletterChange}
+              className="mt-0.5 size-4 shrink-0 accent-flare"
+            />
+            <div>
+              <label htmlFor="newsletter" className="text-sm font-medium text-star">
+                Quiero recibir novedades del archivo
+              </label>
+              <p className="text-xs text-haze">Un correo ocasional con lo mejor del archivo.</p>
+            </div>
+          </div>
+
           <div className="mt-6 border-t border-line/60 pt-5">
             <button type="submit" disabled={!isValid || sending} className="btn-primary w-full sm:w-auto">
               {sending ? "Enviando…" : "Enviar mensaje"}
@@ -237,17 +306,21 @@ export function ContactPage() {
         </aside>
       </div>
 
-      <ConfirmDialog
+      <DarkPatternDialog
         open={confirmOpen}
-        title="¿Enviar el mensaje?"
+        title="¿Enviar y suscribirte?"
         description={
           values.name.trim()
-            ? `Vamos a registrar el mensaje de ${values.name.trim()} (${values.email.trim()}).`
-            : "Revisa los datos antes de confirmar."
+            ? `Vamos a registrar el mensaje de ${values.name.trim()} (${values.email.trim()}) y a sumarte a las novedades del archivo.`
+            : "Vamos a registrar tu mensaje y a sumarte a las novedades del archivo."
         }
-        confirmLabel="Sí, enviar"
-        cancelLabel="Volver al formulario"
+        confirmLabel="Sí, enviar y suscribirme"
+        declineLabel="No, prefiero perderme las novedades"
+        rememberLabel="No volver a preguntar"
+        rememberHint="(recomendado: la próxima vez te suscribimos sin preguntar)"
+        closeLabel="Cerrar sin enviar"
         onConfirm={handleConfirmSend}
+        onDecline={handleDeclineSubscription}
         onCancel={() => setConfirmOpen(false)}
       />
     </div>

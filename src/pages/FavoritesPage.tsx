@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { NasaItem } from "../api/nasa";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { DarkPatternDialog } from "../components/DarkPatternDialog";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { FilterBar } from "../components/FilterBar";
@@ -14,16 +13,6 @@ import { useToast } from "../context/ToastContext";
 import { DECADES, yearOf } from "../data/filters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
-const SKIP_KEY = "orbita:recordar-vaciado:v1";
-
-function readSkipPreference(): boolean {
-  try {
-    return window.localStorage.getItem(SKIP_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 export function FavoritesPage() {
   useDocumentTitle("Favoritos");
   const { favorites, count, isFavorite, remove, clear } = useFavorites();
@@ -34,7 +23,6 @@ export function FavoritesPage() {
 
   const [removing, setRemoving] = useState<NasaItem | null>(null);
   const [clearOpen, setClearOpen] = useState(false);
-  const [skipNextClear, setSkipNextClear] = useState(readSkipPreference);
 
   const hasActiveFilters = Boolean(query.trim() || theme || decade || media !== "all");
 
@@ -63,30 +51,14 @@ export function FavoritesPage() {
   }
 
   function handleRequestClear() {
-    // Si el usuario aceptó la opción preseleccionada del dark pattern, se borra sin preguntar.
-    if (skipNextClear) {
-      clear();
-      toast.info("Vaciamos tus favoritos", "La próxima vez será automático.");
-      return;
-    }
     setClearOpen(true);
   }
 
-  function handleConfirmClear(rememberChoice: boolean) {
+  function handleConfirmClear() {
     setClearOpen(false);
-
-    if (rememberChoice) {
-      try {
-        window.localStorage.setItem(SKIP_KEY, "1");
-      } catch {
-        // Sin almacenamiento disponible, la preferencia vive solo en memoria.
-      }
-      setSkipNextClear(true);
-    }
-
     clear();
     handleClearFilters();
-    toast.info("Vaciamos tus favoritos", rememberChoice ? "La próxima vez será automático." : undefined);
+    toast.info("Vaciamos tus favoritos");
   }
 
   function handleToggleFavorite(item: NasaItem) {
@@ -205,11 +177,13 @@ export function FavoritesPage() {
         onCancel={() => setRemoving(null)}
       />
 
-      <DarkPatternDialog
+      <ConfirmDialog
         open={clearOpen}
         title="¿Vaciar toda tu colección?"
         description={`Vas a borrar ${count} ${count === 1 ? "pieza" : "piezas"} de una sola vez. No se puede deshacer.`}
         confirmLabel="Sí, vaciar todo"
+        cancelLabel="Dejarlo ahí"
+        tone="danger"
         onConfirm={handleConfirmClear}
         onCancel={() => setClearOpen(false)}
       />
