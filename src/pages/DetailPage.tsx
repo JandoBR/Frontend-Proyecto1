@@ -16,6 +16,9 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 type Status = "loading" | "success" | "error" | "notfound";
 
+/** Desde este largo la descripción se recorta y se abre en una caja con scroll. */
+const DESCRIPTION_PREVIEW_LIMIT = 1200;
+
 function formatDate(value: string): string {
   if (!value) return "Sin fecha";
   const date = new Date(value);
@@ -342,10 +345,27 @@ export function DetailPage() {
 
           {item.description ? (
             <div className="mt-4">
-              <p id="descripcion" className={`text-sm leading-relaxed text-haze ${expanded ? "" : "line-clamp-6"}`}>
-                {item.description}
-              </p>
-              {item.description.length > 320 ? (
+              {expanded ? (
+                <div
+                  id="descripcion"
+                  role="region"
+                  aria-label="Descripción completa"
+                  tabIndex={0}
+                  className="max-h-[60vh] overflow-y-auto rounded-xl border border-line/80 bg-ink/60 p-4 text-sm leading-relaxed text-haze"
+                >
+                  {item.description}
+                </div>
+              ) : (
+                <p
+                  id="descripcion"
+                  className={`text-sm leading-relaxed text-haze ${
+                    item.description.length > DESCRIPTION_PREVIEW_LIMIT ? "line-clamp-6" : ""
+                  }`}
+                >
+                  {item.description}
+                </p>
+              )}
+              {item.description.length > DESCRIPTION_PREVIEW_LIMIT ? (
                 <button
                   type="button"
                   onClick={() => setExpanded((value) => !value)}
@@ -353,7 +373,7 @@ export function DetailPage() {
                   aria-controls="descripcion"
                   className="mt-2 text-xs text-flare underline decoration-flare/40 underline-offset-4 hover:decoration-flare"
                 >
-                  {expanded ? "Leer menos" : "Leer más"}
+                  {expanded ? "Contraer descripción" : "Ver descripción completa"}
                 </button>
               ) : null}
             </div>
