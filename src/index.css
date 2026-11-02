@@ -47,6 +47,33 @@
     color-scheme: dark;
   }
 
+  /* Scrollbars del tema, incluidas las cajas con overflow propio. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-line) 50%, var(--color-haze) 50%) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: color-mix(in oklab, var(--color-line) 50%, var(--color-haze) 50%);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--color-flare) 45%, var(--color-haze) 55%);
+  }
+
   dialog::backdrop {
     background-color: rgb(3 5 11 / 0.75);
     backdrop-filter: blur(4px);
