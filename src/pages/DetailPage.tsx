@@ -45,6 +45,7 @@ export function DetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [descriptionBoxReady, setDescriptionBoxReady] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [mediaSrc, setMediaSrc] = useState<string | null>(null);
   const [mediaStatus, setMediaStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
@@ -167,6 +168,7 @@ export function DetailPage() {
   const image = item.preview ?? item.original ?? item.thumb;
   const center = centerLabel(item.center);
   const nasaUrl = `https://images.nasa.gov/details-${item.id}`;
+  const longDescription = item.description.length > DESCRIPTION_PREVIEW_LIMIT;
 
   function handleFavorite() {
     if (!item) return;
@@ -345,30 +347,46 @@ export function DetailPage() {
 
           {item.description ? (
             <div className="mt-4">
-              {expanded ? (
-                <div
-                  id="descripcion"
-                  role="region"
-                  aria-label="Descripción completa"
-                  tabIndex={0}
-                  className="max-h-[60vh] overflow-y-auto rounded-xl border border-line/80 bg-ink/60 p-4 text-sm leading-relaxed text-haze"
-                >
-                  {item.description}
-                </div>
-              ) : (
+              <div id="descripcion">
                 <p
-                  id="descripcion"
+                  aria-hidden={longDescription && expanded}
                   className={`text-sm leading-relaxed text-haze ${
-                    item.description.length > DESCRIPTION_PREVIEW_LIMIT ? "line-clamp-6" : ""
+                    longDescription
+                      ? `line-clamp-6 overflow-hidden transition-[max-height,opacity] duration-200 ease-out motion-reduce:transition-none ${
+                          expanded ? "max-h-0 opacity-0" : "max-h-36 opacity-100"
+                        }`
+                      : ""
                   }`}
                 >
                   {item.description}
                 </p>
-              )}
-              {item.description.length > DESCRIPTION_PREVIEW_LIMIT ? (
+
+                {longDescription ? (
+                  <div
+                    aria-hidden={!expanded}
+                    className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out motion-reduce:transition-none ${
+                      expanded ? "max-h-[60vh] opacity-100" : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    <div
+                      role="region"
+                      aria-label="Descripción completa"
+                      tabIndex={expanded ? 0 : -1}
+                      className="max-h-[60vh] overflow-y-auto rounded-xl border border-line/80 bg-ink/60 p-4 text-sm leading-relaxed text-haze"
+                    >
+                      {descriptionBoxReady ? item.description : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {longDescription ? (
                 <button
                   type="button"
-                  onClick={() => setExpanded((value) => !value)}
+                  onClick={() => {
+                    setExpanded((value) => !value);
+                    setDescriptionBoxReady(true);
+                  }}
                   aria-expanded={expanded}
                   aria-controls="descripcion"
                   className="mt-2 text-xs text-flare underline decoration-flare/40 underline-offset-4 hover:decoration-flare"
